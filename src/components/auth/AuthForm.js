@@ -298,7 +298,7 @@ export default function AuthForm() {
           </Typography>
         </Box>
 
-        <GoogleLoginButton />
+        {/* <GoogleLoginButton /> */}
 
         <Typography
           variant="body2"
