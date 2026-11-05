@@ -275,8 +275,7 @@ export default function Sidebar({
           py: 2,
           cursor: "pointer",
         }}
-        id="profile"
-        aria-controls={openAvatar ? "basic-menu" : undefined}
+        aria-controls={openAvatar ? "profile-menu" : undefined}
         aria-haspopup="true"
         aria-expanded={openAvatar ? "true" : undefined}
         onClick={handleClickAvatar}
@@ -320,68 +319,73 @@ export default function Sidebar({
         </Box>
         {isOpen && <KeyboardArrowDown sx={{ color: "#1e3c72" }} />}
       </Box>
-      <Menu
-        id="profile"
-        anchorEl={anchorEl}
-        open={openAvatar}
-        onClose={handleCloseAvatar}
-        slotProps={{
-          paper: {
-            sx: {
-              minWidth: 180,
-              borderRadius: "8px",
-              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
-              border: "1px solid",
-              borderColor: "divider",
-              py: 0.5,
-              overflow: "hidden",
-            },
+    </Box>
+  );
+
+  // Rendered once, outside drawerContent: both drawers render drawerContent,
+  // and a menu inside it would open twice since they share anchorEl.
+  const profileMenu = (
+    <Menu
+      id="profile-menu"
+      anchorEl={anchorEl}
+      open={openAvatar}
+      onClose={handleCloseAvatar}
+      slotProps={{
+        paper: {
+          sx: {
+            minWidth: 180,
+            borderRadius: "8px",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.12)",
+            border: "1px solid",
+            borderColor: "divider",
+            py: 0.5,
+            overflow: "hidden",
+          },
+        },
+      }}
+    >
+      <MenuItem
+        onClick={() => {
+          console.log("clicked");
+          handleLogout();
+        }}
+        sx={{
+          px: 3,
+          py: 1.5,
+          minWidth: 200,
+          width: "100%",
+          minHeight: 48,
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          fontSize: 14,
+          color: "text.primary",
+          transition: "all 0.2s ease",
+
+          "&:hover": {
+            backgroundColor: "#f0f4ff",
+            color: "#1e3c72",
+          },
+
+          "&:focus": {
+            backgroundColor: "#e6edff",
+          },
+
+          "&:active": {
+            backgroundColor: "#dbeafe",
+            transform: "scale(0.98)",
+          },
+
+          "& svg": {
+            color: "inherit",
+            fontSize: 18,
           },
         }}
       >
-        <MenuItem
-          onClick={() => {
-            console.log("clicked");
-            handleLogout();
-          }}
-          sx={{
-            px: 3,
-            py: 1.5,
-            minWidth: 200,
-            width: "100%",
-            minHeight: 48,
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            fontSize: 14,
-            color: "text.primary",
-            transition: "all 0.2s ease",
-
-            "&:hover": {
-              backgroundColor: "#f0f4ff",
-              color: "#1e3c72",
-            },
-
-            "&:focus": {
-              backgroundColor: "#e6edff",
-            },
-
-            "&:active": {
-              backgroundColor: "#dbeafe",
-              transform: "scale(0.98)",
-            },
-
-            "& svg": {
-              color: "inherit",
-              fontSize: 18,
-            },
-          }}
-        >
-          <Logout fontSize="small" />
-          Logout
-        </MenuItem>
-      </Menu>
-    </Box>
+        <Logout fontSize="small" />
+        Logout
+      </MenuItem>
+    </Menu>
   );
 
   return (
@@ -427,6 +431,8 @@ export default function Sidebar({
       >
         {drawerContent}
       </Drawer>
+
+      {profileMenu}
 
       <Box
         component="main"
