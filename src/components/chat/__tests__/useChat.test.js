@@ -23,7 +23,7 @@ beforeAll(() => {
   // jsdom has no layout engine
   Element.prototype.scrollIntoView = jest.fn();
 });
-afterEach(() => jest.clearAllMocks());
+afterEach(() => jest.resetAllMocks());
 
 describe("sending messages", () => {
   it("sends the typed message, stores the new session and shows the reply", async () => {
@@ -71,6 +71,71 @@ describe("sending messages", () => {
 
     expect(sentForm(1).get("sessionId")).toBeNull();
     expect(result.current.chat.chat.map((m) => m.msg)).toEqual(["Fresh start", "Answer"]);
+  });
+
+  it("ignores a reply that arrives after New Chat was clicked", async () => {
+    let resolveReply;
+    HTTP_REQUEST.post
+      .mockReturnValueOnce(new Promise((resolve) => (resolveReply = resolve)))
+      .mockResolvedValueOnce(serverReply("s2", "Next question"));
+    const { result } = renderChat();
+
+    let pending;
+    act(() => {
+      pending = result.current.chat.onMsgSend("Slow question");
+    });
+    act(() => result.current.chat.initiateNewChat());
+    await act(async () => {
+      resolveReply(serverReply("s1", "Slow question", "Late answer"));
+      await pending;
+    });
+
+    expect(result.current.auth.sessionId).toBeNull();
+    expect(result.current.chat.chat).toEqual([]);
+    expect(result.current.chat.loading).toBe(false);
+
+    await act(() => result.current.chat.onMsgSend("Next question"));
+    expect(sentForm(1).get("sessionId")).toBeNull();
+  });
+
+  it("ignores a reply that arrives after switching to another session", async () => {
+    let resolveReply;
+    HTTP_REQUEST.post.mockReturnValueOnce(new Promise((resolve) => (resolveReply = resolve)));
+    HTTP_REQUEST.get.mockResolvedValueOnce({ data: [{ _id: "old", type: "Human", msg: "Other chat" }] });
+    const { result } = renderChat();
+
+    let pending;
+    act(() => {
+      pending = result.current.chat.onMsgSend("Slow question");
+    });
+    await act(() => result.current.chat.fetchDataForSession("s9"));
+    await act(async () => {
+      resolveReply(serverReply("s1", "Slow question", "Late answer"));
+      await pending;
+    });
+
+    expect(result.current.auth.sessionId).toBe("s9");
+    expect(result.current.chat.chat.map((m) => m.msg)).toEqual(["Other chat"]);
+  });
+
+  it("ignores session history that arrives after New Chat was clicked", async () => {
+    let resolveHistory;
+    HTTP_REQUEST.get.mockReturnValueOnce(new Promise((resolve) => (resolveHistory = resolve)));
+    const { result } = renderChat();
+
+    let pending;
+    act(() => {
+      pending = result.current.chat.fetchDataForSession("s9");
+    });
+    act(() => result.current.chat.initiateNewChat());
+    await act(async () => {
+      resolveHistory({ data: [{ _id: "old", type: "Human", msg: "Old question" }] });
+      await pending;
+    });
+
+    expect(result.current.chat.chat).toEqual([]);
+    expect(result.current.auth.sessionId).toBeNull();
+    expect(result.current.chat.loadingList).toBe(false);
   });
 
   it("shows the server's error message and offers a retry", async () => {

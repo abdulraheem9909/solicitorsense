@@ -13,6 +13,9 @@ const useChat = () => {
   const [reload, setReload] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
   const messagesEndRef = useRef(null);
+  // Bumped whenever the user starts a new chat or opens another session, so
+  // replies to requests made for the previous conversation can be discarded.
+  const conversationRef = useRef(0);
   const [chat, setChat] = useState([]);
   const [msg, setMsg] = useState("");
   const [toast, setToast] = useState({
@@ -114,12 +117,16 @@ const useChat = () => {
         formData.append("documents", file);
       });
 
+      const conversation = conversationRef.current;
+      const isStale = () => conversation !== conversationRef.current;
+
       try {
         const response = await HTTP_REQUEST.post(`/chat`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
         });
+        if (isStale()) return;
 
         // *** USE DATABASE SCHEMA OBJECTS DIRECTLY ***
         const newChat = [
@@ -135,6 +142,7 @@ const useChat = () => {
         setSelectedFiles([]);
         setReload(false);
       } catch (error) {
+        if (isStale()) return;
         setReload(true);
         if (axios.isAxiosError(error) && error.response) {
           setToast({
@@ -146,19 +154,26 @@ const useChat = () => {
           setToast({ open: true, message: error.message, severity: "error" });
         }
       } finally {
-        setLoading(false);
-        setUploadProgress(false);
+        if (!isStale()) {
+          setLoading(false);
+          setUploadProgress(false);
+        }
       }
     }
   };
 
   const fetchDataForSession = async (Id) => {
+    const conversation = ++conversationRef.current;
+    const isStale = () => conversation !== conversationRef.current;
+
     if (sessionId !== Id) setSessionId(Id);
     setLoadingList(true);
     try {
       const response = await HTTP_REQUEST.get(`/chat?&sessionId=${Id}`);
+      if (isStale()) return;
       setChat(response?.data);
     } catch (error) {
+      if (isStale()) return;
       console.log("error", error);
 
       if (axios.isAxiosError(error) && error.response) {
@@ -171,18 +186,22 @@ const useChat = () => {
         setToast({ open: true, message: error.message, severity: "error" });
       }
     } finally {
-      scrollToBottom();
-      setLoadingList(false);
-      setLoading(false);
+      if (!isStale()) {
+        scrollToBottom();
+        setLoadingList(false);
+        setLoading(false);
+      }
     }
   };
 
   const initiateNewChat = () => {
+    conversationRef.current += 1;
     removeSessionId();
     setChat([]);
     setMsg("");
     setSelectedFiles([]); // NEW: Clear files on new chat
     setLoading(false);
+    setLoadingList(false);
     setReload(false);
   };
 
