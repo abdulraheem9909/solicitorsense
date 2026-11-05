@@ -301,7 +301,11 @@ export default function ChatContent({ mobileOpen, setMobileOpen }) {
                 accept=".pdf,.doc,.docx,.txt"
                 style={{ display: "none" }}
                 id="file-upload"
-                onChange={(e) => handleFileSelect(e.target.files)}
+                onChange={(e) => {
+                  handleFileSelect(e.target.files);
+                  // Reset so picking the same file again still fires onChange
+                  e.target.value = "";
+                }}
               />
               <label htmlFor="file-upload">
                 <Tooltip title="Upload documents (PDF, DOC, DOCX, TXT)">

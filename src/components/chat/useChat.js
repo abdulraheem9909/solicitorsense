@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 import HTTP_REQUEST from "@/lib/axiosConfig";
+import { validateFiles } from "@/lib/fileValidation";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -56,21 +57,16 @@ const useChat = () => {
 
   // NEW: File handling functions
   const handleFileSelect = (files) => {
-    const validFiles = Array.from(files).filter((file) => {
-      const extension = file.name.toLowerCase().split(".").pop();
-      return ["pdf", "doc", "docx", "txt"].includes(extension);
-    });
+    const { accepted, rejectedMessage } = validateFiles(
+      Array.from(files),
+      selectedFiles.length
+    );
 
-    if (validFiles.length !== files.length) {
-      setToast({
-        open: true,
-        message:
-          "Some files were rejected. Only PDF, DOC, DOCX, and TXT files are allowed.",
-        severity: "warning",
-      });
+    if (rejectedMessage) {
+      setToast({ open: true, message: rejectedMessage, severity: "warning" });
     }
 
-    setSelectedFiles((prev) => [...prev, ...validFiles]);
+    setSelectedFiles((prev) => [...prev, ...accepted]);
   };
 
   const removeFile = (index) => {

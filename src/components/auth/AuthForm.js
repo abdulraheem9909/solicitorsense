@@ -117,7 +117,7 @@ export default function AuthForm() {
         </Tabs>
 
         {tabValue === 0 && (
-          <Box>
+          <Box component="form" noValidate onSubmit={handleLogin}>
             <TextField
               fullWidth
               label="Email"
@@ -167,7 +167,6 @@ export default function AuthForm() {
               variant="contained"
               sx={{ py: 1.3, fontWeight: 600, background: "#1e3c72" }}
               disabled={loading}
-              onClick={handleLogin}
             >
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
@@ -179,7 +178,7 @@ export default function AuthForm() {
         )}
 
         {tabValue === 1 && (
-          <Box>
+          <Box component="form" noValidate onSubmit={handleSignup}>
             <TextField
               fullWidth
               label="Full Name"
@@ -269,7 +268,6 @@ export default function AuthForm() {
               variant="contained"
               sx={{ py: 1.3, fontWeight: 600, background: "#1e3c72" }}
               disabled={loading}
-              onClick={handleSignup}
             >
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
